@@ -2,6 +2,7 @@
 -- Place in StarterPlayerScripts (client).
 
 local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
@@ -12,6 +13,17 @@ local finalGuiUrl = "https://raw.githubusercontent.com/Angelo-Gitland/c00l-admin
 -- State flags / debounce
 local awaitingHacker = false    -- set true after Intro1 plays; Intro2 will run on next death+respawn
 local runningHacker = false     -- debounce while hacker intro is running
+
+-- Notification helper
+local function notify(msg, duration)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "Lua Land Hub",
+            Text = msg,
+            Duration = duration or 5
+        })
+    end)
+end
 
 -- Safe loader helper (runs a loadstring from URL with pcall)
 local function safeLoadString(url)
@@ -26,7 +38,6 @@ end
 
 -- Hacker intro (matrix) function (wrapped, returns when finished)
 local function runHackerIntro()
-    -- (kept same config/content as you provided)
     local guiName = "Lua Land Hub"
     local matrixSize = 18
     local dropSpeed = 0.02
@@ -214,42 +225,17 @@ local function attachCharacter(character)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if humanoid then
         humanoid.Died:Connect(function()
-            -- only react if Intro1 already played and hacker not yet run
             if awaitingHacker and not runningHacker then
-                -- wait for respawn, then run hacker intro
                 runningHacker = true
-                -- wait for player's character to be added again (respawn)
                 local conn
                 conn = LocalPlayer.CharacterAdded:Connect(function(newChar)
                     if conn then conn:Disconnect() end
-                    -- small allow time for appearance
                     task.wait(0.2)
                     local ok, err = pcall(runHackerIntro)
                     if not ok then warn("Hacker intro error:", err) end
-                    -- after hacker intro, load final GUI
                     loadFinalGui()
                     awaitingHacker = false
                     runningHacker = false
-                end)
-            end
-        end)
-    else
-        character.ChildAdded:Connect(function(child)
-            if child and child:IsA("Humanoid") then
-                child.Died:Connect(function()
-                    if awaitingHacker and not runningHacker then
-                        runningHacker = true
-                        local conn
-                        conn = LocalPlayer.CharacterAdded:Connect(function(newChar)
-                            if conn then conn:Disconnect() end
-                            task.wait(0.2)
-                            local ok, err = pcall(runHackerIntro)
-                            if not ok then warn("Hacker intro error:", err) end
-                            loadFinalGui()
-                            awaitingHacker = false
-                            runningHacker = false
-                        end)
-                    end
                 end)
             end
         end)
@@ -266,8 +252,9 @@ task.spawn(function()
     local ok, err = safeLoadString(pastebinIntroUrl)
     if not ok then
         warn("Intro1 (pastebin) failed:", err)
-        -- still mark as played so hacker can trigger on next death if desired
     end
+    -- Show notification for 1 minute
+    notify("GUI WON'T LOAD IF YOU DIDN'T DIED!", 60)
     -- mark that hacker intro should be played on the next death+respawn
     awaitingHacker = true
 end)
