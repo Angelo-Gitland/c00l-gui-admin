@@ -1,0 +1,277 @@
+-- LocalScript: Show Intro1 on execute (no respawn), then show Intro2 only after next death+respawn.
+-- Place in StarterPlayerScripts (client).
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+-- URLs
+local pastebinIntroUrl = "https://pastebin.com/raw/ud8GUnvj"
+local finalGuiUrl = "https://raw.githubusercontent.com/Angelo-Gitland/c00l-admin-gui/refs/heads/main/c00l%20admin"
+
+-- State flags / debounce
+local awaitingHacker = false    -- set true after Intro1 plays; Intro2 will run on next death+respawn
+local runningHacker = false     -- debounce while hacker intro is running
+
+-- Safe loader helper (runs a loadstring from URL with pcall)
+local function safeLoadString(url)
+    local ok, res = pcall(function()
+        local code = game:HttpGet(url)
+        local f, loadErr = loadstring(code)
+        if not f then error("loadstring failed: "..tostring(loadErr)) end
+        f()
+    end)
+    return ok, res
+end
+
+-- Hacker intro (matrix) function (wrapped, returns when finished)
+local function runHackerIntro()
+    -- (kept same config/content as you provided)
+    local guiName = "Lua Land Hub"
+    local matrixSize = 18
+    local dropSpeed = 0.02
+    local dropRate = 0.04
+    local glitchRate = 0.15
+    local endSound = "rbxassetid://113490737252515"
+    local endSoundVolume = 1
+    local terminalSpeed = 0.015
+    local lineDelay = 0.25
+
+    if CoreGui:FindFirstChild(guiName) then
+        CoreGui[guiName]:Destroy()
+    end
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = guiName
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    gui.DisplayOrder = 999999
+    gui.Parent = CoreGui
+
+    local backdrop = Instance.new("Frame", gui)
+    backdrop.Size = UDim2.new(1, 0, 1, 0)
+    backdrop.BackgroundColor3 = Color3.new(0, 0, 0)
+    backdrop.BackgroundTransparency = 0.9
+    backdrop.ZIndex = 0
+
+    local matrixFrame = Instance.new("Frame", gui)
+    matrixFrame.Size = UDim2.new(1, 0, 1, 0)
+    matrixFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+
+    local function spawnMatrixBit(x)
+        local bit = Instance.new("TextLabel", matrixFrame)
+        bit.Size = UDim2.new(0, 20, 0, 20)
+        bit.Position = UDim2.new(0, x, 0, -20)
+        bit.BackgroundTransparency = 1
+        bit.TextColor3 = Color3.fromRGB(0, 255, 0)
+        bit.Font = Enum.Font.Code
+        bit.TextSize = matrixSize
+        bit.Text = tostring(math.random(0, 1))
+
+        coroutine.wrap(function()
+            for i = -20, 1080, 20 do
+                bit.Position = UDim2.new(0, x, 0, i)
+                bit.Text = tostring(math.random(0, 1))
+                task.wait(dropSpeed)
+            end
+            bit:Destroy()
+        end)()
+    end
+
+    local matrixRunning = true
+    task.spawn(function()
+        while gui and gui.Parent and matrixRunning do
+            for _ = 1, math.random(6, 10) do
+                spawnMatrixBit(math.random(0, 1920))
+            end
+            task.wait(dropRate)
+        end
+    end)
+
+    local glitchTexts = {
+        "MOV EAX, [Angelo Official]",
+        "Crack EBP\nMOV ESP",
+        "INT 0x80", "JMP $+4",
+        "Ent EAX, EAX", "STACK_OVERFLOW@0xBADBEEF",
+        "ESC (0xc000005)", "RAX: 0xDEADBEEF",
+        "ERROR: SEGFAULT", "DISKREADERROR"
+    }
+
+    local function spawnGlitch()
+        local frame = Instance.new("Frame", gui)
+        frame.Size = UDim2.new(0, math.random(180, 300), 0, math.random(40, 80))
+        frame.Position = UDim2.new(0, math.random(0, 1600), 0, math.random(0, 800))
+        frame.BackgroundColor3 = Color3.fromRGB(math.random(100, 255), 0, 0)
+        frame.BackgroundTransparency = math.random() * 0.5
+        frame.BorderSizePixel = 0
+
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.Code
+        label.TextColor3 = Color3.new(math.random(), math.random(), math.random())
+        label.TextScaled = true
+        label.Text = glitchTexts[math.random(1, #glitchTexts)]
+
+        coroutine.wrap(function()
+            for _ = 1, 8 do
+                label.Text = glitchTexts[math.random(1, #glitchTexts)]
+                label.TextColor3 = Color3.new(math.random(), math.random(), math.random())
+                frame.BackgroundTransparency = math.random()
+                task.wait(0.05)
+            end
+            frame:Destroy()
+        end)()
+    end
+
+    local glitchRunning = true
+    task.spawn(function()
+        while gui and gui.Parent and glitchRunning do
+            spawnGlitch()
+            task.wait(glitchRate)
+        end
+    end)
+
+    local terminalFrame = Instance.new("Frame", gui)
+    terminalFrame.Size = UDim2.new(0, 600, 0, 220)
+    terminalFrame.Position = UDim2.new(0, 50, 1, -240)
+    terminalFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+
+    local terminalOutput = Instance.new("TextLabel", terminalFrame)
+    terminalOutput.Size = UDim2.new(1, -10, 1, -10)
+    terminalOutput.Position = UDim2.new(0, 5, 0, 5)
+    terminalOutput.BackgroundTransparency = 1
+    terminalOutput.TextColor3 = Color3.fromRGB(0, 255, 0)
+    terminalOutput.Font = Enum.Font.Code
+    terminalOutput.TextSize = 16
+    terminalOutput.TextXAlignment = Enum.TextXAlignment.Left
+    terminalOutput.TextYAlignment = Enum.TextYAlignment.Top
+    terminalOutput.TextWrapped = true
+    terminalOutput.Text = ""
+
+    local terminalLines = {
+        "[*] Preparing UI...",
+        "[+] Adding Titles...",
+        "[+] Adding Descriptions...",
+        "[+] Creating Tabs...",
+        "[+] Creating Buttons...",
+        "[+] Adding titles...",
+        "[+] Connecting code to function...",
+        "[+] Success!",
+        "[+] INTx" .. math.random(0, 999999)
+    }
+
+    local splashSound = Instance.new("Sound", gui)
+    splashSound.SoundId = endSound
+    splashSound.Volume = endSoundVolume
+
+    local function flashAndFinish()
+        local flash = Instance.new("Frame", gui)
+        flash.Size = UDim2.new(1, 0, 1, 0)
+        flash.BackgroundColor3 = Color3.new(1, 1, 1)
+        flash.ZIndex = 999
+        flash.BackgroundTransparency = 1
+
+        splashSound:Play()
+        for i = 1, 10 do
+            flash.BackgroundTransparency = 1 - (i / 10)
+            task.wait(0.04)
+        end
+        task.wait(0.4)
+
+        matrixRunning = false
+        glitchRunning = false
+        if gui and gui.Parent then
+            gui:Destroy()
+        end
+    end
+
+    for _, line in ipairs(terminalLines) do
+        for i = 1, #line do
+            terminalOutput.Text = terminalOutput.Text .. line:sub(i, i)
+            task.wait(terminalSpeed)
+        end
+        terminalOutput.Text = terminalOutput.Text .. "\n"
+        task.wait(lineDelay)
+    end
+    task.wait(1)
+    flashAndFinish()
+    return true
+end
+
+-- Load final GUI (safe)
+local function loadFinalGui()
+    local ok, err = pcall(function()
+        local code = game:HttpGet(finalGuiUrl)
+        local f, loadErr = loadstring(code)
+        if not f then error("final gui loadstring failed: "..tostring(loadErr)) end
+        f()
+    end)
+    if not ok then warn("Final GUI failed to load:", err) end
+end
+
+-- Attach to character's humanoid death (to detect deaths)
+local function attachCharacter(character)
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.Died:Connect(function()
+            -- only react if Intro1 already played and hacker not yet run
+            if awaitingHacker and not runningHacker then
+                -- wait for respawn, then run hacker intro
+                runningHacker = true
+                -- wait for player's character to be added again (respawn)
+                local conn
+                conn = LocalPlayer.CharacterAdded:Connect(function(newChar)
+                    if conn then conn:Disconnect() end
+                    -- small allow time for appearance
+                    task.wait(0.2)
+                    local ok, err = pcall(runHackerIntro)
+                    if not ok then warn("Hacker intro error:", err) end
+                    -- after hacker intro, load final GUI
+                    loadFinalGui()
+                    awaitingHacker = false
+                    runningHacker = false
+                end)
+            end
+        end)
+    else
+        character.ChildAdded:Connect(function(child)
+            if child and child:IsA("Humanoid") then
+                child.Died:Connect(function()
+                    if awaitingHacker and not runningHacker then
+                        runningHacker = true
+                        local conn
+                        conn = LocalPlayer.CharacterAdded:Connect(function(newChar)
+                            if conn then conn:Disconnect() end
+                            task.wait(0.2)
+                            local ok, err = pcall(runHackerIntro)
+                            if not ok then warn("Hacker intro error:", err) end
+                            loadFinalGui()
+                            awaitingHacker = false
+                            runningHacker = false
+                        end)
+                    end
+                end)
+            end
+        end)
+    end
+end
+
+-- Connect to existing and future characters
+if LocalPlayer.Character then
+    attachCharacter(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(attachCharacter)
+
+-- ========== START: Play Intro1 immediately when script runs (no respawn) ==========
+task.spawn(function()
+    local ok, err = safeLoadString(pastebinIntroUrl)
+    if not ok then
+        warn("Intro1 (pastebin) failed:", err)
+        -- still mark as played so hacker can trigger on next death if desired
+    end
+    -- mark that hacker intro should be played on the next death+respawn
+    awaitingHacker = true
+end)
+-- ========== END ==========
