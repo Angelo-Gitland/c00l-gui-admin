@@ -150,14 +150,14 @@ local function runHackerIntro()
     terminalOutput.Text = ""
 
     local terminalLines = {
-        "[*] Preparing UI...",
-        "[+] Adding Titles...",
-        "[+] Adding Descriptions...",
-        "[+] Creating Tabs...",
-        "[+] Creating Buttons...",
-        "[+] Adding titles...",
-        "[+] Connecting code to function...",
-        "[+] Success!",
+        "[*] Ohh! You Die!",
+        "[+] Hmmm, This Is Normal!",
+        "[+] Gui Won't Load If you didn't died",
+        "[+] this script is made by lua land",
+        "[+] You Can See Him In Discord!",
+        "[+] We Hope You Enjoy!",
+        "[+] Connecting Code...",
+        "[+] Thank You!",
         "[+] INTx" .. math.random(0, 999999)
     }
 
@@ -199,7 +199,6 @@ local function runHackerIntro()
     return true
 end
 
--- Load final GUI (safe)
 local function loadFinalGui()
     local ok, err = pcall(function()
         local code = game:HttpGet(finalGuiUrl)
@@ -210,7 +209,6 @@ local function loadFinalGui()
     if not ok then warn("Final GUI failed to load:", err) end
 end
 
--- Attach to character's humanoid death (to detect deaths)
 local function attachCharacter(character)
     if not character then return end
     local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -258,7 +256,6 @@ local function attachCharacter(character)
     end
 end
 
--- Connect to existing and future characters
 if LocalPlayer.Character then
     attachCharacter(LocalPlayer.Character)
 end
